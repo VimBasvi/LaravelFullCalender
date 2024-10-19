@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Client;
+use App\Models\Employee;
 
 class Appointment extends Model
 {
@@ -13,13 +15,14 @@ class Appointment extends Model
         'client_id',
         'employee_id',
     ];
- 
-    public function client(): BelongsTo
+
+    // Correct relationship definition
+    public function client(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Client::class);
     }
- 
-    public function employee(): BelongsTo
+
+    public function employee(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(Employee::class);
     }

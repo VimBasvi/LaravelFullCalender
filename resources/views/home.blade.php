@@ -15,26 +15,33 @@
 
             var calendar = new FullCalendar.Calendar(calendarEl, {
                 initialView: 'timeGridWeek',
+                selectable: true,  // Enable selection by dragging
                 slotMinTime: '08:00:00',
                 slotMaxTime: '19:00:00',
                 events: @json($events), // Existing appointments
-                dateClick: function(info) {
-                    // Handle click on date to create an appointment
-                    let start = info.dateStr; // Get clicked date and time
-                    let employeeId = prompt("Enter employee ID:"); // Can be replaced with a dropdown/modal
+
+                // Callback when a range of time is selected
+                select: function(info) {
+                    // Get the selected start and end time
+                    let start = info.startStr;
+                    let end = info.endStr;
+
+                    // You can replace this with a modal or form to ask for additional details
+                    let employeeId = prompt("Enter employee ID:");
 
                     if (employeeId) {
-                        // Send data to server to create appointment
+                        // Send data to the server to create the appointment
                         $.ajax({
                             url: '/appointments',  // Route for appointment creation
                             type: 'POST',
                             data: {
                                 _token: '{{ csrf_token() }}',  // CSRF token for security
                                 start_time: start,
-                                employee_id: employeeId //will need to manually set this once user visits braider page/ profile
+                                finish_time: end,  // Selected end time
+                                employee_id: employeeId
                             },
                             success: function(response) {
-                                // Add the new event to the calendar after it's saved in the database
+                                // Add the new event to the calendar after it's saved
                                 calendar.addEvent({
                                     title: response.client_name + ' (' + response.employee_name + ')',
                                     start: response.start_time,
