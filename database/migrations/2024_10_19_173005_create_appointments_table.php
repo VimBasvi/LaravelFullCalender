@@ -12,8 +12,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('appointments', function (Blueprint $table) {
-            $table->id();
-            $table->timestamps();
+            $table->id();  // Primary key
+            $table->datetime('start_time');  // Start time of the appointment
+            $table->datetime('finish_time');  // End time of the appointment
+            $table->longText('comments')->nullable();  // Optional comments
+            $table->foreignId('client_id')->constrained();  // Foreign key to clients table
+            $table->foreignId('employee_id')->constrained();  // Foreign key to employees table
+            $table->timestamps();  // Created_at and updated_at timestamps
         });
     }
 

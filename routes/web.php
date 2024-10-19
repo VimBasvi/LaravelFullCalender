@@ -2,6 +2,8 @@
 
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+use App\Http\Controllers\HomeController;
+
+// route the "/" (home page) to the __invoke method of homecontroller
+Route::get('/', \App\Http\Controllers\HomeController::class)->name('home');
+
