@@ -9,6 +9,7 @@ use App\Http\Controllers\HomeController;
 Route::get('/', HomeController::class)->name('home');
 
 // Route for storing appointments
+Route::get('/', [AppointmentController::class, 'showEmployeeCalendar'])->name('appointments.show');
 Route::post('/appointments', [AppointmentController::class, 'store'])->name('appointments.store');
 
 // Routes for employee availability

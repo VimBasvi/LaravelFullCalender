@@ -1,9 +1,12 @@
 @extends('layouts.app')
 
 @section('content')
+    <h2>Book a Slot with {{ $employee->name }}</h2> <!-- Employee name for context -->
+
+    <!-- FullCalendar will be rendered here -->
     <div id="calendar"></div>
 
-    <!-- Modal for collecting employee ID and confirming the appointment -->
+    <!-- Modal for confirming the appointment -->
     <div class="modal fade" id="appointmentModal" tabindex="-1" aria-labelledby="appointmentModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -13,17 +16,14 @@
                 </div>
                 <div class="modal-body">
                     <form id="appointmentForm">
-                        <div class="mb-3">
-                            <label for="employeeId" class="form-label">Employee ID</label>
-                            <input type="text" class="form-control" id="employeeId" name="employee_id" required>
-                        </div>
+                        <p>Do you want to book this slot?</p>
                         <input type="hidden" id="startTime" name="start_time">
                         <input type="hidden" id="endTime" name="finish_time">
                     </form>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" id="saveAppointmentBtn" class="btn btn-primary">Save Appointment</button>
+                    <button type="button" id="saveAppointmentBtn" class="btn btn-primary">Book Appointment</button>
                 </div>
             </div>
         </div>
@@ -39,83 +39,62 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
     <script>
-		document.addEventListener('DOMContentLoaded', function() {
-			var calendarEl = document.getElementById('calendar');
+        document.addEventListener('DOMContentLoaded', function() {
+            var calendarEl = document.getElementById('calendar');
 
-			var calendar = new FullCalendar.Calendar(calendarEl, {
-				initialView: 'timeGridWeek',
-				selectable: true,  // Enable selection by dragging
-				slotMinTime: '06:00:00',
-				slotMaxTime: '24:00:00',
-				events: @json($events), // Existing appointments
+            var calendar = new FullCalendar.Calendar(calendarEl, {
+                initialView: 'timeGridWeek',
+                selectable: false,  // Disable free selection
+                slotMinTime: '06:00:00',
+                slotMaxTime: '24:00:00',
+                events: {!! $availabilities !!},  // Load employee availability into the calendar
 
-				// Restrict past dates and times
-				validRange: {
-					start: new Date().toISOString().split('T')[0], // Today's date
-				},
+                // Handle click on an available slot (event)
+                eventClick: function(info) {
+                    $('#startTime').val(info.event.startStr);
+                    $('#endTime').val(info.event.endStr);
 
-				// Callback when a range of time is selected
-				select: function(info) {
-					var now = new Date();  // Get current date and time
+                    // Show the booking modal
+                    $('#appointmentModal').modal('show');
+                }
+            });
 
-					// Check if selected date is today
-					if (new Date(info.startStr).toDateString() === now.toDateString()) {
-						// Check if the selected time is in the past
-						if (new Date(info.startStr) < now) {
-							alert("Cannot book appointments in the past!");
-							calendar.unselect();  // Deselect the invalid selection
-							return;
-						}
-					}
+            // Handle the save button click to book the appointment
+            $('#saveAppointmentBtn').click(function() {
+                let start = $('#startTime').val();
+                let end = $('#endTime').val();
 
-					// Store the selected start and end time in hidden inputs
-					$('#startTime').val(info.startStr);
-					$('#endTime').val(info.endStr);
+                let employeeId = {{ $employee->id }};  // Employee ID passed from backend
 
-					// Show the modal to select employee ID
-					$('#appointmentModal').modal('show');
-				}
-			});
+                // Send booking request via AJAX
+                $.ajax({
+                    url: '/appointments',  // Route for appointment creation
+                    type: 'POST',
+                    data: {
+                        _token: '{{ csrf_token() }}',  // CSRF token for security
+                        start_time: start,
+                        finish_time: end,
+                        employee_id: employeeId  // Employee ID from backend
+                    },
+                    success: function(response) {
+                        // Add the new event to the calendar
+                        calendar.addEvent({
+                            title: response.client_name + ' (' + response.employee_name + ')',
+                            start: response.start_time,
+                            end: response.finish_time
+                        });
 
-			// Handle the save button click from the modal
-			$('#saveAppointmentBtn').click(function() {
-				let employeeId = $('#employeeId').val();
-				let start = $('#startTime').val();
-				let end = $('#endTime').val();
+                        // Close the modal
+                        $('#appointmentModal').modal('hide');
+                        alert("Appointment booked!");
+                    },
+                    error: function() {
+                        alert("Failed to book appointment!");
+                    }
+                });
+            });
 
-				if (employeeId) {
-					// Send the data to the server via AJAX
-					$.ajax({
-						url: '/appointments',  // Route for appointment creation
-						type: 'POST',
-						data: {
-							_token: '{{ csrf_token() }}',  // CSRF token for security
-							start_time: start,
-							finish_time: end,
-							employee_id: employeeId
-						},
-						success: function(response) {
-							// Add the new event to the calendar
-							calendar.addEvent({
-								title: response.client_name + ' (' + response.employee_name + ')',
-								start: response.start_time,
-								end: response.finish_time
-							});
-
-							// Close the modal
-							$('#appointmentModal').modal('hide');
-							alert("Appointment booked!");
-						},
-						error: function() {
-							alert("Failed to book appointment!");
-						}
-					});
-				}
-			});
-
-			calendar.render();
-		});
-	</script>
-
-
+            calendar.render();
+        });
+    </script>
 @endpush
