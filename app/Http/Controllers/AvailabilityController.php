@@ -14,7 +14,20 @@ class AvailabilityController extends Controller
         // Fetch availabilities for the authenticated employee, or for employee_id = 1 by default
         $employeeId = Auth::check() ? Auth::id() : 1;
         $availabilities = EmployeeAvailability::where('employee_id', $employeeId)->get();
-        return view('availability', compact('availabilities'));
+        
+        // Return the availability data to the view in JSON format
+        $availabilitiesJson = $availabilities->map(function ($availability) {
+            return [
+                'id' => $availability->id,
+                'title' => 'Available', // You can customize the title
+                'start' => $availability->start_time,
+                'end' => $availability->end_time,
+                'backgroundColor' => '#28a745',
+                'borderColor' => '#28a745',
+            ];
+        });
+
+        return view('availability', ['availabilities' => $availabilitiesJson]);
     }
 
     // Store availability
@@ -38,14 +51,32 @@ class AvailabilityController extends Controller
             'availability_type' => $request->availability_type,  // one-time or recurring
         ]);
 
-        // Return the saved availability as a JSON response
+        // Return the saved availability as a JSON response including the ID
         return response()->json([
+            'id' => $availability->id,
             'start_time' => $availability->start_time,
             'end_time' => $availability->end_time
         ]);
     }
-}
 
+    // Delete availability
+    public function destroy($id)
+    {
+        // Find the availability by ID
+        $availability = EmployeeAvailability::find($id);
+
+        $employeeId = Auth::check() ? Auth::id() : 1; // change this in official code 
+
+        // Check if availability exists and if the authenticated user owns the availability
+        if ($availability && $availability->employee_id == $employeeId) {
+            $availability->delete();
+            return response()->json(['success' => true], 200);
+        }
+
+        // Return an error response if the availability was not found or unauthorized access
+        return response()->json(['success' => false], 403);
+    }
+}
 
 // namespace App\Http\Controllers;
 

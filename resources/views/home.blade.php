@@ -45,8 +45,8 @@
 			var calendar = new FullCalendar.Calendar(calendarEl, {
 				initialView: 'timeGridWeek',
 				selectable: true,  // Enable selection by dragging
-				slotMinTime: '08:00:00',
-				slotMaxTime: '19:00:00',
+				slotMinTime: '06:00:00',
+				slotMaxTime: '24:00:00',
 				events: @json($events), // Existing appointments
 
 				// Restrict past dates and times
