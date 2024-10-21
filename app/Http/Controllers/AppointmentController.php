@@ -79,7 +79,15 @@ class AppointmentController extends Controller
         // Eager load the related client and employee data
         $appointment->load('client', 'employee');
 
+        // Mark the availability as booked
+        EmployeeAvailability::where('employee_id', $validated['employee_id'])
+                            ->where('start_time', $validated['start_time'])
+                            ->where('end_time', $validated['finish_time'])
+                            ->update(['booked' => true]);
+
+
         // Return JSON response with appointment details to update FullCalendar
+        //shld we really return these?
         return response()->json([
             'client_name' => $appointment->client->name,  // Access client name
             'employee_name' => $appointment->employee->name,  // Access employee name
