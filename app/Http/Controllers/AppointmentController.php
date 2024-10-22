@@ -18,8 +18,10 @@ class AppointmentController extends Controller
         // Set the default employee ID to 1 (you can change this as needed)
         $employeeId = 1;
 
-        // Fetch availability for the default employee (ID = 1)
-        $availabilities = EmployeeAvailability::where('employee_id', $employeeId)->get();
+        // Fetch availability for the default employee (limiting displayed appts to only booked appts )
+        $availabilities =  EmployeeAvailability::where('employee_id', $employeeId)
+                                                    ->where('booked', false) // Only show unbooked slots
+                                                    ->get();
 
         // Fetch the employee object based on the ID
         $employee = Employee::find($employeeId);
@@ -60,13 +62,8 @@ class AppointmentController extends Controller
             'finish_time' => 'nullable|date|after:start_time',  // Optional finish time
         ]);
 
-        // Ensure the user is authenticated
-        // if (!auth()->check()) {
-        //     return response()->json(['error' => 'Client not logged in'], 401);
-        // }
-
-        // Get the client ID (authenticated user)
-        $client_id = 1; //auth()->user()->id;
+        // Get the client ID (assuming no authentication for now)
+        $client_id = 1; // or use auth()->user()->id if authentication is present
 
         // Create the appointment
         $appointment = Appointment::create([
@@ -76,23 +73,19 @@ class AppointmentController extends Controller
             'finish_time' => $validated['finish_time'],  // Optional, can be calculated
         ]);
 
-        // Eager load the related client and employee data
-        $appointment->load('client', 'employee');
-
         // Mark the availability as booked
         EmployeeAvailability::where('employee_id', $validated['employee_id'])
-                            ->where('start_time', $validated['start_time'])
-                            ->where('end_time', $validated['finish_time'])
-                            ->update(['booked' => true]);
-
+            ->where('start_time', $validated['start_time'])
+            ->update(['booked' => true]);
 
         // Return JSON response with appointment details to update FullCalendar
-        //shld we really return these?
         return response()->json([
-            'client_name' => $appointment->client->name,  // Access client name
-            'employee_name' => $appointment->employee->name,  // Access employee name
+            'event_id' => $appointment->id,  // Return the event ID to manipulate on the frontend
+            'client_name' => $appointment->client->name,
+            'employee_name' => $appointment->employee->name,
             'start_time' => $appointment->start_time,
             'finish_time' => $appointment->finish_time,
         ]);
     }
+
 }

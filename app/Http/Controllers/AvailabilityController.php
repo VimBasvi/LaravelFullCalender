@@ -77,4 +77,3 @@ class AvailabilityController extends Controller
         return response()->json(['success' => false], 403);
     }
 }
-

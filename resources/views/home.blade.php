@@ -38,63 +38,77 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var calendarEl = document.getElementById('calendar');
+	<script>
+		document.addEventListener('DOMContentLoaded', function() {
+			var calendarEl = document.getElementById('calendar');
 
-            var calendar = new FullCalendar.Calendar(calendarEl, {
-                initialView: 'timeGridWeek',
-                selectable: false,  // Disable free selection
-                slotMinTime: '06:00:00',
-                slotMaxTime: '24:00:00',
-                events: {!! $availabilities !!},  // Load employee availability into the calendar
+			var calendar = new FullCalendar.Calendar(calendarEl, {
+				initialView: 'timeGridWeek',
+				selectable: false,  // Disable free selection
+				slotMinTime: '06:00:00',
+				slotMaxTime: '24:00:00',
+				events: {!! $availabilities !!},  // Load employee availability into the calendar
 
-                // Handle click on an available slot (event)
-                eventClick: function(info) {
-                    $('#startTime').val(info.event.startStr);
-                    $('#endTime').val(info.event.endStr);
+				// Handle click on an available slot (event)
+				eventClick: function(info) {
+					if (info.event.title === "Booked Appointment") {
+						alert("This slot is already booked.");
+						return; // Prevent any further action for booked slots
+					}
 
-                    // Show the booking modal
-                    $('#appointmentModal').modal('show');
-                }
-            });
+					$('#startTime').val(info.event.startStr);
+					$('#endTime').val(info.event.endStr);
 
-            // Handle the save button click to book the appointment
-            $('#saveAppointmentBtn').click(function() {
-                let start = $('#startTime').val();
-                let end = $('#endTime').val();
+					// Show the booking modal
+					$('#appointmentModal').modal('show');
+				}
+			});
 
-                let employeeId = {{ $employee->id }};  // Employee ID passed from backend
+			// Handle the save button click to book the appointment
+			$('#saveAppointmentBtn').click(function() {
+				let start = $('#startTime').val();
+				let end = $('#endTime').val();
+				let employeeId = {{ $employee->id }};  // Employee ID passed from backend
 
-                // Send booking request via AJAX
-                $.ajax({
-                    url: '/appointments',  // Route for appointment creation
-                    type: 'POST',
-                    data: {
-                        _token: '{{ csrf_token() }}',  // CSRF token for security
-                        start_time: start,
-                        finish_time: end,
-                        employee_id: employeeId  // Employee ID from backend
-                    },
-                    success: function(response) {
-                        // Add the new event to the calendar
-                        calendar.addEvent({
-                            title: response.client_name + ' (' + response.employee_name + ')',
-                            start: response.start_time,
-                            end: response.finish_time
-                        });
+				// Send booking request via AJAX
+				$.ajax({
+					url: '/appointments',  // Route for appointment creation
+					type: 'POST',
+					data: {
+						_token: '{{ csrf_token() }}',  // CSRF token for security
+						start_time: start,
+						finish_time: end,
+						employee_id: employeeId  // Employee ID from backend
+					},
+					success: function(response) {
+						// Remove the "Available" event from the calendar
+						var availableEvent = calendar.getEvents().find(event => event.startStr === start && event.title === 'Available');
+						if (availableEvent) {
+							availableEvent.remove();  // Remove available slot immediately
+						}
 
-                        // Close the modal
-                        $('#appointmentModal').modal('hide');
-                        alert("Appointment booked!");
-                    },
-                    error: function() {
-                        alert("Failed to book appointment!");
-                    }
-                });
-            });
+						// Add the new "Booked" event
+						calendar.addEvent({
+							id: response.event_id,  // Use the event ID returned from the server
+							title: 'Booked Appointment',
+							start: response.start_time,
+							end: response.finish_time,
+							backgroundColor: '#dc3545',  // Customize color for booked slots
+							borderColor: '#dc3545'
+						});
 
-            calendar.render();
-        });
-    </script>
+						// Close the modal
+						$('#appointmentModal').modal('hide');
+						alert("Appointment booked!");
+					},
+					error: function() {
+						alert("Failed to book appointment!");
+					}
+				});
+			});
+
+			calendar.render();
+		});
+	</script>
+
 @endpush
