@@ -11,22 +11,22 @@ class AvailabilityController extends Controller
     // Display availability view for the employee
     public function index()
     {
-        // Fetch availabilities for the authenticated employee, or for employee_id = 1 by default
+        // Fetch availabilities for the authenticated employee
         $employeeId = Auth::check() ? Auth::id() : 1;
         $availabilities = EmployeeAvailability::where('employee_id', $employeeId)->get();
         
-        // Return the availability data to the view in JSON format
+        // Return availability data to the view, marking booked ones
         $availabilitiesJson = $availabilities->map(function ($availability) {
             return [
                 'id' => $availability->id,
-                'title' => 'Available', // You can customize the title
+                'title' => $availability->booked ? 'Booked' : 'Available', // Mark booked slots
                 'start' => $availability->start_time,
                 'end' => $availability->end_time,
-                'backgroundColor' => '#28a745',
-                'borderColor' => '#28a745',
+                'backgroundColor' => $availability->booked ? '#dc3545' : '#28a745', // Red for booked, green for available
+                'borderColor' => $availability->booked ? '#dc3545' : '#28a745',
             ];
         });
-
+    
         return view('availability', ['availabilities' => $availabilitiesJson]);
     }
 
