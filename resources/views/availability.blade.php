@@ -58,7 +58,21 @@
 				selectable: true,  // Allow employees to select time slots
 				slotMinTime: '08:00:00',
 				slotMaxTime: '24:00:00',
-				events: @json($availabilities), // Load existing availability data from the database
+ 				// Load existing availability data from the database into calendar in specific format
+				events: @json($availabilities).map(event => {
+					let titleText = event.title;
+					if (event.location) {
+						titleText += ' - ' + event.location;
+					}
+					return {
+						id: event.id,
+						title: titleText,
+						start: event.start,
+						end: event.end,
+						backgroundColor: event.backgroundColor,
+						borderColor: event.borderColor,
+					};
+				}),
 
 				// Event selection handler
 				select: function(info) {
@@ -108,7 +122,7 @@
 						}
 						calendar.addEvent({
 							id: response.id,  // Set id so we can delete it later
-							title: 'Available' + response.location,
+							title: titleText,
 							start: response.start_time,
 							end: response.end_time,
 							backgroundColor: '#28a745',  // Customize color for availability

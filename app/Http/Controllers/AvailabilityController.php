@@ -24,8 +24,10 @@ class AvailabilityController extends Controller
                 'end' => $availability->end_time,
                 'backgroundColor' => $availability->booked ? '#dc3545' : '#28a745', // Red for booked, green for available
                 'borderColor' => $availability->booked ? '#dc3545' : '#28a745',
+                'location' => $availability->location,
             ];
         });
+
     
         return view('availability', ['availabilities' => $availabilitiesJson]);
     }
