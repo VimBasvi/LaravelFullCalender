@@ -24,6 +24,11 @@
                                 <option value="recurring">Recurring</option>
                             </select>
 						</div>
+						<!-- for location optional -->
+						<div class="mb-3">
+							<label for="location" class="form-label">Location:</label>
+							<input type="text" class="form-control" id="location" name="location" placeholder="Enter location">
+						</div>
 						<input type="hidden" id="start_time" name="start_time" value="">
                         <input type="hidden" id="end_time" name="end_time" value="">
 						<div class="modal-footer">
@@ -96,9 +101,14 @@
 					type: 'POST',
 					data: $(this).serialize(),
 					success: function(response) {
+						// Add the event to the calendar with location if provided
+						let titleText = 'Available';
+						if (response.location) {
+							titleText += ' - ' + response.location;
+						}
 						calendar.addEvent({
 							id: response.id,  // Set id so we can delete it later
-							title: 'Available',
+							title: 'Available' + response.location,
 							start: response.start_time,
 							end: response.end_time,
 							backgroundColor: '#28a745',  // Customize color for availability

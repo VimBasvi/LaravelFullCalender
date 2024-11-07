@@ -38,6 +38,7 @@ class AvailabilityController extends Controller
             'start_time' => 'required|date',
             'end_time' => 'required|date|after:start_time',
             'availability_type' => 'required|string',  // Handle recurring or one-time availability
+            'location' => 'nullable|string|max:255', // Add location validation
         ]);
 
         // Set employee_id to authenticated user ID or default to 1 if not authenticated
@@ -49,13 +50,15 @@ class AvailabilityController extends Controller
             'start_time' => $request->start_time,
             'end_time' => $request->end_time,
             'availability_type' => $request->availability_type,  // one-time or recurring
+            'location' => $request->location, // Set the location
         ]);
 
-        // Return the saved availability as a JSON response including the ID
+        // Return the saved availability as a JSON response including the ID to the frontend for rendering
         return response()->json([
             'id' => $availability->id,
             'start_time' => $availability->start_time,
-            'end_time' => $availability->end_time
+            'end_time' => $availability->end_time,
+            'location' => $availability->location,
         ]);
     }
 
