@@ -6,6 +6,8 @@ use App\Models\Appointment;
 use App\Models\Employee;
 use App\Models\EmployeeAvailability;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail; // 
+use App\Mail\AppointmentConfirmation; // to import the Mailable class
 
 // handle the appointment creation request
 class AppointmentController extends Controller
@@ -77,7 +79,13 @@ class AppointmentController extends Controller
         EmployeeAvailability::where('employee_id', $validated['employee_id'])
             ->where('start_time', $validated['start_time'])
             ->update(['booked' => true]);
+        // Send appointment confirmation email
+        $clientEmail = "vimbisai.basvi@yale.edu"; //$appointment->client->email; // use client email attribute
+        $stylistEmail = "basvi.vimbisai@gmail.com";//$appointment->employee->email; // use employee email attribute
 
+        Mail::to($clientEmail)->send(new AppointmentConfirmation($appointment));
+        // Send email to the stylist
+        Mail::to($stylistEmail)->send(new AppointmentConfirmation($appointment));
         // Return JSON response with appointment details to update FullCalendar
         return response()->json([
             'event_id' => $appointment->id,  // Return the event ID to manipulate on the frontend
